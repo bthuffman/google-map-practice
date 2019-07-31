@@ -4,10 +4,12 @@ import { NgModule } from '@angular/core';
 import { AppComponent } from './app.component';
 
 import { AgmCoreModule } from '@agm/core';
+import { RandomizerComponent } from './randomizer/randomizer.component';
 
 @NgModule({
   declarations: [
-    AppComponent
+    AppComponent,
+    RandomizerComponent
   ],
   imports: [
     BrowserModule,
