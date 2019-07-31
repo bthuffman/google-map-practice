@@ -68,11 +68,10 @@ export class AppComponent
             return;
           }
  
-          //set latitude, longitude and zoom
+          //set latitude and longitude
           this.latitude = place.geometry.location.lat();
           this.longitude = place.geometry.location.lng();
           this.name = place.name;
-          this.zoom = 12;
           console.log("This is the searched loactions latitude " + this.latitude);
           console.log("This is the searched locations name " + this.name);
         });
