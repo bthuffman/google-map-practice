@@ -34,18 +34,29 @@ export class AppComponent
   ngOnInit() {
     //load Places Autocomplete
     this.mapsAPILoader.load().then(() => {
-      //calls the setCurrentLocation function (see bellow)
-      this.setCurrentLocation();
+
       //assign geoCoder a new Geocoder object
       this.geoCoder = new google.maps.Geocoder;
       
+      var defaultBounds = new google.maps.LatLngBounds(
+        //TODO move to two objects and set each to a constant variable (lat/long)
+        // This is the latitude and longitude of 10 miles 0.14492753623 
+        {
+          lat:this.latitude-0.14492753623, lng:this.longitude-0.14492753623
+        }, 
+        {
+          lat:this.latitude+0.14492753623, 
+        lng:this.longitude+0.14492753623
+        }); 
       
+      var input = this.searchElementRef.nativeElement; 
+
+      var options = {
+        bounds: defaultBounds,
+        types: ['establishment']
+      };
       //similar to that found in js example but for autocomplete
-      let service = new google.maps.places.Autocomplete
-      //targets the html element labeled 'search' 
-      (this.searchElementRef.nativeElement, {
-        types: ["address"]
-      });
+      let service = new google.maps.places.Autocomplete( input, options);
       
       service.addListener("place_changed", () => {
         this.ngZone.run(() => {
@@ -66,21 +77,29 @@ export class AppComponent
           console.log("This is the searched locations name " + this.name);
         });
       });
+      //calls the setCurrentLocation function (see bellow)
+      this.setCurrentLocation(service);
     });
   }
  
-  // Get Current Location Coordinates
-  private setCurrentLocation() {
+  // Get Current Location Coordinates with the limits set to Albuquerque as set in the var options default bounds. 
+  private setCurrentLocation(service) {
     if ('geolocation' in navigator) {
       navigator.geolocation.getCurrentPosition((position) => {
         this.latitude = position.coords.latitude;
         this.longitude = position.coords.longitude;
         this.zoom = 8;
         this.getAddress(this.latitude, this.longitude);
+        var geolocation = { 
+          lat: position.coords.latitude,
+          lng: position.coords.longitude
+          };
+        var circle = new google.maps.Circle(
+          {center: geolocation, radius: position.coords.accuracy});
+        service.setBounds(circle.getBounds());
       });
     }
   }
- 
  
   markerDragEnd($event: MouseEvent) {
     console.log("This is event" + $event);
