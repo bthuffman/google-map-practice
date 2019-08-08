@@ -1,6 +1,5 @@
 import { Component, OnInit, EventEmitter, Output, ViewChild, ElementRef, NgZone } from '@angular/core';
 import { MapsAPILoader, MouseEvent } from '@agm/core';
-import { timingSafeEqual } from 'crypto';
 
 @Component({
   selector: 'app-randomizer',
@@ -39,6 +38,7 @@ export class RandomizerComponent implements OnInit {
     type: 'restaurant'
   };
 
+
   @ViewChild('search')
   // ElementRef is a wrapper around a native element inside of a View. Allows you to use Angular templates and data binding to access DOM elements without reference to the native element.
   public searchElementRef: ElementRef;
@@ -60,6 +60,7 @@ export class RandomizerComponent implements OnInit {
 
       //assign geoCoder a new Geocoder object
       this.geoCoder = new google.maps.Geocoder;
+
       // This is the latitude and longitude of 10 miles 0.14492753623 
       var tenMileLatLong = 0.14492753623;
       var defaultBounds = new google.maps.LatLngBounds(
@@ -83,7 +84,8 @@ export class RandomizerComponent implements OnInit {
       console.log(service);
       //this runs if search in the search box
       service.addListener("place_changed", () => {
-        //this.ngZone.run(() => { //It appears that ngZone is not necessary to. 
+        //ngZone is necessary to update the marker position based on the result 
+        this.ngZone.run(() => { 
         //get the place result
         let place: google.maps.places.PlaceResult = service.getPlace();
         console.log(place);
@@ -98,7 +100,7 @@ export class RandomizerComponent implements OnInit {
         this.name = place.name;
         console.log("This is the searched locations latitude " + this.latitude);
         console.log("This is the searched locations name " + this.name);
-        //});//It appears that ngZone is not necessary here. 
+        }); 
       });
       //calls the setCurrentLocation function (see bellow)
       this.setCurrentLocation(service);
@@ -153,9 +155,9 @@ export class RandomizerComponent implements OnInit {
   }
   //////////////////////////////////////////////////////
 
-  callback(results: google.maps.places.PlaceResult[], status: google.maps.places.PlacesServiceStatus) {
+  callback(results: google.maps.places.PlaceResult[], status: google.maps.places.PlacesServiceStatus, Component: RandomizerComponent) {
     if (status == google.maps.places.PlacesServiceStatus.OK) {
-
+      // console.log(This);
       let max = results.length - 1;
 
       let randomNumber = Math.floor(Math.random() * Math.floor(max));
@@ -171,16 +173,14 @@ export class RandomizerComponent implements OnInit {
         return;
       }
 
-      // newService.nearbySearch(request, this.callback);
-
       //set latitude and longitude
-      this.latitude = newPlace.geometry.location.lat();
-      this.longitude = newPlace.geometry.location.lng();
-      this.name = newPlace.name;
-      console.log("This is the searched loactions latitude " + this.latitude);
-      console.log("This is the searched locations name " + this.name);
+      Component.latitude = newPlace.geometry.location.lat();
+      Component.longitude = newPlace.geometry.location.lng();
+      Component.name = newPlace.name;
+      console.log("This is the searched loactions latitude " + Component.latitude);
+      console.log("This is the searched locations name " + Component.name);
 
-      this.setNewLocation(newPlace);
+      Component.getNewAddress(Component.latitude, Component.longitude);
       console.log("Hi callback()");
     }
   }
@@ -192,8 +192,9 @@ export class RandomizerComponent implements OnInit {
     //creating a function named valueChanged which is called on the click event of the button and inside the function event valueChanged is emitted. Passing counter as a parameter.
     this.valueChange.emit(this.counter);
 
-    //get the place result
-    let newService = new google.maps.places.PlacesService(this.randomElementRef.nativeElement).nearbySearch(this.request, this.callback)
+    //get the place result.
+    // Callback is function, the anonymous function is used to pass "this" to itself (the Component). This is the highest object in scope, without it this wouldn't refer to the component but would be limited to it's own scope. 
+    let newService = new google.maps.places.PlacesService(this.randomElementRef.nativeElement).nearbySearch(this.request,(result, status)=> this.callback(result, status, this))
 
     console.log(newService);
     console.log("Hi valueChanged()");
@@ -212,7 +213,7 @@ export class RandomizerComponent implements OnInit {
         };
         var circle = new google.maps.Circle(
           { center: newGeolocation, radius: position.coords.accuracy });
-        newService.setBounds(circle.getBounds());
+        // newService.setBounds(circle.getBounds());
         console.log(newGeolocation);
         console.log("Hi setNewLocation()");
       });
@@ -226,7 +227,7 @@ export class RandomizerComponent implements OnInit {
 
       if (status === 'OK') {
         if (results[0]) {
-          // this.zoom = 12;
+          this.zoom = 16;
           this.address = results[0].formatted_address;
           console.log(this.address);
         } else {
@@ -236,15 +237,8 @@ export class RandomizerComponent implements OnInit {
         window.alert('Geocoder failed due to: ' + status);
       }
 
-      this.createMarker(this.latitude, this.longitude);
     });
     console.log("Hi getNewAddress()")
   }
 
-  createMarker(latitude, longitude) {
-    var marker = new google.maps.Marker({
-      position: {lat: latitude, lng: longitude}
-    })
-    console.log("Hi createMarker()");
-  }
 }
